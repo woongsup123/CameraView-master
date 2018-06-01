@@ -4,9 +4,13 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.view.View;
 import android.widget.ImageView;
 
 import com.otaliastudios.cameraview.CameraUtils;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 
@@ -43,23 +47,46 @@ public class PicturePreviewActivity extends Activity {
 
                 // approxUncompressedSize.setTitle("Approx. uncompressed size");
                 // approxUncompressedSize.setMessage(getApproximateFileMegabytes(bitmap) + "MB");
+                resultMessageView.setVisibility(View.VISIBLE);
+                metaMessageView.setVisibility(View.VISIBLE);
+                typeMessageView.setTitle("이미지 종류");
+                try {
+                    JSONObject jsonMeta = new JSONObject(meta);
 
-                typeMessageView.setTitle("고지서 or 지폐");
-                if (type.equals("NOTE")) {
-                    typeMessageView.setMessage("지폐");
-                }
-                else{
-                    if (result.equals("")){
+                    if (type.equals("NOTE")) {
+                        String currency = jsonMeta.getString("currency");
+                        String amount = jsonMeta.getString("amount");
+                        String confidence = jsonMeta.getString("confidence");
                         typeMessageView.setMessage("지폐");
-                    }
-                    else {
+                        resultMessageView.setTitle("지폐 정보");
+                        resultMessageView.setMessage(currency + " " + amount);
+                        metaMessageView.setTitle("정확도");
+                        metaMessageView.setMessage(confidence.substring(0, 4));
+
+
+                    } else {
+                        String type = jsonMeta.getString("type");
+                        String code = jsonMeta.getString("code");
                         typeMessageView.setMessage("고지서");
                         resultMessageView.setTitle("고지서 종류");
-                        resultMessageView.setMessage(result);
+                        metaMessageView.setTitle("고지서 정보");
+                        if (type.equals("") || type.equals("null")) {
+                            typeMessageView.setMessage("지원하지 않는 문서 양식입니다.");
+                            resultMessageView.setVisibility(View.GONE);
+                            metaMessageView.setVisibility(View.GONE);
+                        } else
+                        if (code.equals("") || code.equals("null")) {
+                            resultMessageView.setMessage(type);
+                            metaMessageView.setVisibility(View.GONE);
+                        } else {
+                            resultMessageView.setMessage(type);
+                            metaMessageView.setMessage(code);
+                        }
+
                     }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-                metaMessageView.setTitle("결과 값");
-                metaMessageView.setMessage(meta);
 
                 // AspectRatio finalRatio = AspectRatio.of(bitmap.getWidth(), bitmap.getHeight());
                 // actualResolution.setTitle("Actual resolution");

@@ -2,6 +2,7 @@
 <android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
     android:background="#FF444444"
     android:layout_width="match_parent"
@@ -20,7 +21,7 @@
         app:cameraCropOutput="false"
         app:cameraFacing="back"
         app:cameraFlash="off"
-        app:cameraAudio="on"
+        app:cameraAudio="off"
         app:cameraGestureTap="focusWithMarker"
         app:cameraGestureLongTap="none"
         app:cameraGesturePinch="zoom"
@@ -29,11 +30,15 @@
         app:cameraJpegQuality="100"
         app:cameraSessionType="picture" >
 
-
     </com.otaliastudios.cameraview.CameraView>
 
     <ImageView
         android:id="@+id/top"
+        android:layout_width="0px"
+        android:layout_height="0px"
+        app:srcCompat="@android:color/holo_blue_dark" />
+    <ImageView
+        android:id="@+id/bottom"
         android:layout_width="0px"
         android:layout_height="0px"
         app:srcCompat="@android:color/holo_blue_dark" />
@@ -55,6 +60,13 @@
         android:orientation="horizontal"
         android:padding="16dp"
         android:weightSum="3">
+        <ImageButton
+            android:id="@+id/edit"
+
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/background"
+            app:srcCompat="@drawable/ic_edit" />
         <Space
             android:layout_width="0dp"
             android:layout_height="1dp"
@@ -69,26 +81,58 @@
             app:srcCompat="@drawable/ic_photo" />
 
         <Space
-            android:layout_width="0dp"
+            android:layout_width="56dp"
             android:layout_height="1dp"
             android:layout_weight="1.5" />
 
     </LinearLayout>
 
     <!-- Edit -->
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/controls"
-        android:background="@android:color/white"
-        app:layout_behavior="@string/bottom_sheet_behavior"
-        app:behavior_hideable="true"
-        app:behavior_peekHeight="300dp"
-        app:behavior_skipCollapsed="false"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-    </android.support.v4.widget.NestedScrollView>
+    <!--<android.support.v4.widget.NestedScrollView-->
+        <!--android:id="@+id/controller"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="bottom"-->
+        <!--android:background="@android:color/white"-->
+        <!--app:layout_behavior="@string/appbar_scrolling_view_behavior"-->
+        <!--app:behavior_skipCollapsed="false"-->
+        <!--app:behavior_hideable="true">-->
 
+        <!--&lt;!&ndash;app:layout_behavior="@string/bottom_sheet_behavior"-->
+    <!--app:behavior_hideable="true"-->
+    <!--app:behavior_peekHeight="100dp"-->
+    <!--app:behavior_skipCollapsed="false"&ndash;&gt;-->
+
+        <!--<RelativeLayout-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:padding = "5dp">-->
+
+            <!--<TextView-->
+                <!--android:id="@+id/textView01"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:padding = "15dp"-->
+                <!--android:text="Hello World 01 !" />-->
+
+            <!--<TextView-->
+                <!--android:id="@+id/textView02"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:padding = "15dp"-->
+                <!--android:layout_below="@id/textView01"-->
+                <!--android:text="Hello World 02 !" />-->
+
+            <!--&lt;!&ndash; TextView03 ~ TextView05는 생략 &ndash;&gt;-->
+
+            <!--<TextView-->
+                <!--android:id="@+id/textView03"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:padding = "15dp"-->
+                <!--android:layout_below="@id/textView02"-->
+                <!--android:text="Hello World 06 !" />-->
+
+        <!--</RelativeLayout>-->
+    <!--</android.support.v4.widget.NestedScrollView>-->
 </android.support.design.widget.CoordinatorLayout>
