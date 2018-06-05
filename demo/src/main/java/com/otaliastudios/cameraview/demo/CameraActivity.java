@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -86,9 +87,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private String PURPOSE = "Hana"; //Hana or DBLife, crop
 
-    private final String IPADDR = "10.122.66.152";
+    private final String IPADDR = "125.132.250.244";
     private final String DIR = "/api/pilot/upload/";
-    private final int PORT = 8000;
+    private final int PORT = 801;
+
+//    private final String IPADDR = "10.122.64.248";
+//    private final String DIR = "/api/pilot/upload/";
+//    private final int PORT = 8000;
 
     final int CONTEXT_MENU_HANA = 1;
     final int CONTEXT_MENU_DBLIFE = 2;
@@ -121,7 +126,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                 //                                    frameY,
                 //                                    rootWidth*(1-frameX*2) / rootWidth,
                 //                                    rootHeight*(1-frameY*2) / rootHeight);
-                if (PURPOSE.equals("Hana")) {
+                if (PURPOSE.contains("Hana")) {
                     jpeg = resizePicture(jpeg);
                 }
                 //savePicture(resizedImg, "resized");
@@ -152,19 +157,37 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                 .setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         Bitmap bitmap = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length);
 
-        ContentBody cb = new ByteArrayBody(jpeg, "pic.jpg");
-        builder.addPart("content", cb);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(270);
+        Bitmap scaledBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] scaledJpeg = baos.toByteArray();
 
-        builder.addTextBody("purpose", PURPOSE);
-        builder.addTextBody("width", Integer.toString(bitmap.getHeight()));
-        builder.addTextBody("height", Integer.toString(bitmap.getWidth()));
         if(PURPOSE.contains("DB")) {
-            double ratio = ((double) rootHeight / rootWidth) * ((double) bitmap.getHeight() / bitmap.getWidth());
-            builder.addTextBody("ref_vertex_x", Double.toString(frameXDBLife * ratio));
+
+            ContentBody cb = new ByteArrayBody(jpeg, "pic.jpg");
+            builder.addPart("content", cb);
+
+            builder.addTextBody("purpose", PURPOSE);
+            builder.addTextBody("width", Integer.toString(bitmap.getHeight()));
+            builder.addTextBody("height", Integer.toString(bitmap.getWidth()));
+            //int bmHeight = bitmap.getHeight();
+            //int bmWidth = bitmap.getWidth();
+            //double ratio = ((double) rootHeight / rootWidth) * ((double) bitmap.getHeight() / bitmap.getWidth());
+            //ratio = 1.8;
+            builder.addTextBody("ref_vertex_x", Double.toString(frameXDBLife));
             builder.addTextBody("ref_vertex_y", Double.toString(frameYDBLife));
             builder.addTextBody("symm_crop", "True");
         }
         else if (PURPOSE.contains("Hana")){
+
+            ContentBody cb = new ByteArrayBody(scaledJpeg, "pic.jpg");
+            builder.addPart("content", cb);
+
+            builder.addTextBody("purpose", PURPOSE);
+            builder.addTextBody("width", Integer.toString(scaledBitmap.getWidth()));
+            builder.addTextBody("height", Integer.toString(scaledBitmap.getHeight()));
             builder.addTextBody("ref_vertex_x", Double.toString(frameYHana));
             builder.addTextBody("ref_vertex_y", Double.toString(frameXHana));
             builder.addTextBody("symm_crop", "False");
@@ -178,21 +201,24 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                 //InputStream is = httpEntity.getContent();
                 String content = EntityUtils.toString(httpEntity);
                 JSONObject jsonObject = new JSONObject(content);
-                if (PURPOSE.contains("DB")){
+                if (PURPOSE.contains("Crop") || PURPOSE.contains("DBLife")){
                     String imageString = jsonObject.getString("image");
                     byte[] decodedString = Base64.decode(imageString, Base64.DEFAULT);
                     Bitmap decoded = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    decoded.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                    byte[] byteImg = baos.toByteArray();
+                    ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+                    decoded.compress(Bitmap.CompressFormat.JPEG, 100, baos2);
+                    byte[] byteImg = baos2.toByteArray();
+                    type = "";
                     onPicture(byteImg);
+
                 }
                 else{
+
                     type = jsonObject.getString("type");
                     meta = jsonObject.getString("meta");
                     //JSONObject metaObject = new JSONObject(meta);
                     //meta = metaObject.getString("meta");
-                    onPicture(jpeg);
+                    onPicture(scaledJpeg);
                 }
 
             }
@@ -306,7 +332,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         intent.putExtra("meta", meta);
         //intent.putExtra("nativeHeight", mCaptureNativeSize.getHeight());
         startActivity(intent);
-
         //AlertDialog.Builder builder = new AlertDialog.Builder(this);
         //builder.setTitle("인식결과: OCR 일반").setMessage("<5422751+ +00024500109998180115+ +38001< <11<").show();
         //mCaptureTime = 0;

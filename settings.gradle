@@ -1,1 +1,2 @@
 include ':demo', ':cameraview'
+include ':openCVLibrary2411'

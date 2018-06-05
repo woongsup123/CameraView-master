@@ -32,7 +32,6 @@ public class PicturePreviewActivity extends Activity {
         final MessageView resultMessageView = findViewById(R.id.result);
         final MessageView metaMessageView = findViewById(R.id.meta);
         final String type = getIntent().getStringExtra("type");
-        final String result = getIntent().getStringExtra("result");
         final String meta = getIntent().getStringExtra("meta");
         byte[] b = image == null ? null : image.get();
         if (b == null) {
@@ -47,13 +46,15 @@ public class PicturePreviewActivity extends Activity {
 
                 // approxUncompressedSize.setTitle("Approx. uncompressed size");
                 // approxUncompressedSize.setMessage(getApproximateFileMegabytes(bitmap) + "MB");
+                typeMessageView.setVisibility(View.VISIBLE);
                 resultMessageView.setVisibility(View.VISIBLE);
                 metaMessageView.setVisibility(View.VISIBLE);
-                typeMessageView.setTitle("이미지 종류");
+
                 try {
                     JSONObject jsonMeta = new JSONObject(meta);
 
                     if (type.equals("NOTE")) {
+                        typeMessageView.setTitle("이미지 종류");
                         String currency = jsonMeta.getString("currency");
                         String amount = jsonMeta.getString("amount");
                         String confidence = jsonMeta.getString("confidence");
@@ -64,7 +65,8 @@ public class PicturePreviewActivity extends Activity {
                         metaMessageView.setMessage(confidence.substring(0, 4));
 
 
-                    } else {
+                    } else if (type.equals("BILL")){
+                        typeMessageView.setTitle("이미지 종류");
                         String type = jsonMeta.getString("type");
                         String code = jsonMeta.getString("code");
                         typeMessageView.setMessage("고지서");
@@ -83,6 +85,10 @@ public class PicturePreviewActivity extends Activity {
                             metaMessageView.setMessage(code);
                         }
 
+                    } else{
+                        typeMessageView.setVisibility(View.INVISIBLE);
+                        resultMessageView.setVisibility(View.INVISIBLE);
+                        metaMessageView.setVisibility(View.INVISIBLE);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
