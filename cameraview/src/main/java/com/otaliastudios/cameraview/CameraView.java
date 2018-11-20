@@ -1666,7 +1666,7 @@ public class CameraView extends FrameLayout {
         @Override
         public void onDeviceOrientationChanged(int deviceOrientation) {
             mLogger.i("onDeviceOrientationChanged", deviceOrientation);
-            mCameraController.setDeviceOrientation(deviceOrientation);
+            //mCameraController.setDeviceOrientation(deviceOrientation);
             int displayOffset = mOrientationHelper.getDisplayOffset();
             final int value = (deviceOrientation + displayOffset) % 360;
             mUiHandler.post(new Runnable() {
