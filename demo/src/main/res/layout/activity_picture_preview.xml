@@ -16,7 +16,7 @@
             android:adjustViewBounds="true" />
 
         <com.otaliastudios.cameraview.demo.MessageView
-            android:id="@+id/type"
+            android:id="@+id/image_class"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
@@ -31,11 +31,19 @@
             android:layout_height="wrap_content"/-->
 
         <com.otaliastudios.cameraview.demo.MessageView
-            android:id="@+id/result"
+            android:id="@+id/type"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
         <com.otaliastudios.cameraview.demo.MessageView
-            android:id="@+id/meta"
+            android:id="@+id/code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <com.otaliastudios.cameraview.demo.MessageView
+            android:id="@+id/user_code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <com.otaliastudios.cameraview.demo.MessageView
+            android:id="@+id/confidence"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 

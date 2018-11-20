@@ -2,14 +2,16 @@ package com.otaliastudios.cameraview.demo;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.format.Formatter;
 import android.util.Base64;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -56,9 +58,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class CameraActivity extends AppCompatActivity implements View.OnClickListener, ControlView.Callback {
 
+    private Configuration orientationDegrees;
     private CameraView camera;
 
     private boolean mCapturingPicture;
@@ -87,13 +89,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private String PURPOSE = "Hana"; //Hana or DBLife, crop
 
-    private final String IPADDR = "125.132.250.244";
     private final String DIR = "/api/pilot/upload/";
-    private final int PORT = 801;
 
-//    private final String IPADDR = "10.122.64.248";
-//    private final String DIR = "/api/pilot/upload/";
-//    private final int PORT = 8000;
+    private final String EXTERNAL_IPADDR = "125.132.250.244";
+    private final int EXTERNAL_PORT = 801;
+
+    private final String INTERNAL_IPADDR = "10.122.66.152";
+    private final int INTERNAL_PORT = 8000;
 
     final int CONTEXT_MENU_HANA = 1;
     final int CONTEXT_MENU_DBLIFE = 2;
@@ -119,7 +121,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
             public void onPictureTaken(byte[] jpeg) {
-
+                orientationDegrees = getResources().getConfiguration();
                 savePicture(jpeg, "original");
                 //byte[] croppedImg = cropPicture(jpeg,
                 //                                    frameX,
@@ -131,16 +133,19 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                 }
                 //savePicture(resizedImg, "resized");
                 final byte[] finalJpeg = jpeg;
-                Thread th = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        sendPicture(finalJpeg);
-                    }
-                });
-                th.start();
+                if (!PURPOSE.contains("Crop")){
+                    Thread th = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            sendPicture(finalJpeg);
+                        }
+                    });
+                    th.start();
+                }
+                else{
+                    onPicture(jpeg);
+                }
             }
-
-
         });
 
         findViewById(R.id.capturePhoto).setOnClickListener(this);
@@ -148,21 +153,32 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void sendPicture(byte[] jpeg) {
+        String ipaddr = EXTERNAL_IPADDR;
+        int port = EXTERNAL_PORT;
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        if (wifiManager != null) {
+            String device_ip_addr = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
+            if (device_ip_addr.startsWith("10.122")){
+                ipaddr = INTERNAL_IPADDR;
+                port = INTERNAL_PORT;
+            }
+        }
         type ="";
         meta="";
         HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost("http://"+IPADDR+":"+Integer.toString(PORT)+DIR);
+        HttpPost httpPost = new HttpPost("http://"+ipaddr+":"+Integer.toString(port)+DIR);
         MultipartEntityBuilder builder = MultipartEntityBuilder.create()
                 .setCharset(Charset.forName("UTF-8"))
                 .setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         Bitmap bitmap = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length);
 
-        Matrix matrix = new Matrix();
-        matrix.postRotate(270);
-        Bitmap scaledBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        byte[] scaledJpeg = baos.toByteArray();
+        //Matrix matrix = new Matrix();
+
+        //matrix.postRotate(90);
+        //Bitmap scaledBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        //ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        //scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        //byte[] scaledJpeg = baos.toByteArray();
 
         if(PURPOSE.contains("DB")) {
 
@@ -182,12 +198,12 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
         else if (PURPOSE.contains("Hana")){
 
-            ContentBody cb = new ByteArrayBody(scaledJpeg, "pic.jpg");
+            ContentBody cb = new ByteArrayBody(jpeg, "pic.jpg");
             builder.addPart("content", cb);
 
             builder.addTextBody("purpose", PURPOSE);
-            builder.addTextBody("width", Integer.toString(scaledBitmap.getWidth()));
-            builder.addTextBody("height", Integer.toString(scaledBitmap.getHeight()));
+            builder.addTextBody("width", Integer.toString(bitmap.getWidth()));
+            builder.addTextBody("height", Integer.toString(bitmap.getHeight()));
             builder.addTextBody("ref_vertex_x", Double.toString(frameYHana));
             builder.addTextBody("ref_vertex_y", Double.toString(frameXHana));
             builder.addTextBody("symm_crop", "False");
@@ -197,7 +213,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             httpPost.setEntity(builder.build());
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();
-            if (httpEntity != null){
+            int statusCode = httpResponse.getStatusLine().getStatusCode();
+            if (statusCode == 200){
                 //InputStream is = httpEntity.getContent();
                 String content = EntityUtils.toString(httpEntity);
                 JSONObject jsonObject = new JSONObject(content);
@@ -218,18 +235,24 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                     meta = jsonObject.getString("meta");
                     //JSONObject metaObject = new JSONObject(meta);
                     //meta = metaObject.getString("meta");
-                    onPicture(scaledJpeg);
+                    onPicture(jpeg);
                 }
-
+            }
+            else{
+                onPicture(jpeg);
             }
         } catch (ClientProtocolException e) {
             e.printStackTrace();
+            onPicture(jpeg);
         } catch (IOException e) {
             e.printStackTrace();
+            onPicture(jpeg);
         } catch (JSONException e) {
             e.printStackTrace();
+            onPicture(jpeg);
         } catch (Error e){
             e.printStackTrace();
+            onPicture(jpeg);
         }
     }
 

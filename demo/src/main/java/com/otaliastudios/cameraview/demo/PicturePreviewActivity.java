@@ -28,9 +28,17 @@ public class PicturePreviewActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_picture_preview);
         final ImageView imageView = findViewById(R.id.image);
+        final MessageView imageClassMessageView = findViewById(R.id.image_class);
         final MessageView typeMessageView = findViewById(R.id.type);
-        final MessageView resultMessageView = findViewById(R.id.result);
-        final MessageView metaMessageView = findViewById(R.id.meta);
+        final MessageView codeMessageView = findViewById(R.id.code);
+        final MessageView userCodeMessageView = findViewById(R.id.user_code);
+        final MessageView confidenceMessageView = findViewById(R.id.confidence);
+        imageClassMessageView.setVisibility(View.GONE);
+        typeMessageView.setVisibility(View.GONE);
+        codeMessageView.setVisibility(View.GONE);
+        userCodeMessageView.setVisibility(View.GONE);
+        typeMessageView.setVisibility(View.GONE);
+        confidenceMessageView.setVisibility(View.GONE);
         final String type = getIntent().getStringExtra("type");
         final String meta = getIntent().getStringExtra("meta");
         byte[] b = image == null ? null : image.get();
@@ -46,49 +54,76 @@ public class PicturePreviewActivity extends Activity {
 
                 // approxUncompressedSize.setTitle("Approx. uncompressed size");
                 // approxUncompressedSize.setMessage(getApproximateFileMegabytes(bitmap) + "MB");
-                typeMessageView.setVisibility(View.VISIBLE);
-                resultMessageView.setVisibility(View.VISIBLE);
-                metaMessageView.setVisibility(View.VISIBLE);
+
 
                 try {
                     JSONObject jsonMeta = new JSONObject(meta);
 
                     if (type.equals("NOTE")) {
-                        typeMessageView.setTitle("이미지 종류");
+                        imageClassMessageView.setVisibility(View.VISIBLE);
+                        typeMessageView.setVisibility(View.VISIBLE);
+                        confidenceMessageView.setVisibility(View.VISIBLE);
+                        imageClassMessageView.setTitle("이미지 종류");
                         String currency = jsonMeta.getString("currency");
-                        String amount = jsonMeta.getString("amount");
-                        String confidence = jsonMeta.getString("confidence");
-                        typeMessageView.setMessage("지폐");
-                        resultMessageView.setTitle("지폐 정보");
-                        resultMessageView.setMessage(currency + " " + amount);
-                        metaMessageView.setTitle("정확도");
-                        metaMessageView.setMessage(confidence.substring(0, 4));
+                        String amount = Integer.toString(jsonMeta.getInt("amount"));
+                        String confidenceLevel = Double.toString(
+                                jsonMeta.getDouble("confidence_level")
+                        );
+                        imageClassMessageView.setMessage("지폐");
+                        typeMessageView.setTitle("지폐 정보");
+                        typeMessageView.setMessage(currency + " " + amount);
+                        confidenceMessageView.setTitle("정확도");
+                        confidenceMessageView.setMessage(confidenceLevel.substring(0, 4));
 
 
                     } else if (type.equals("BILL")){
-                        typeMessageView.setTitle("이미지 종류");
+                        imageClassMessageView.setVisibility(View.VISIBLE);
+                        typeMessageView.setVisibility(View.VISIBLE);
+                        codeMessageView.setVisibility(View.VISIBLE);
+                        userCodeMessageView.setVisibility(View.VISIBLE);
+                        confidenceMessageView.setVisibility(View.VISIBLE);
                         String type = jsonMeta.getString("type");
                         String code = jsonMeta.getString("code");
-                        typeMessageView.setMessage("고지서");
-                        resultMessageView.setTitle("고지서 종류");
-                        metaMessageView.setTitle("고지서 정보");
+                        String confidenceLevel = Double.toString(
+                                jsonMeta.getDouble("confidence_level")
+                        );
+                        String userCode;
+                        try{
+                            userCode = jsonMeta.getString("user_code");
+                        } catch (JSONException e){
+                            userCode = "";
+                        }
+                        imageClassMessageView.setTitle("이미지 종류");
+                        imageClassMessageView.setMessage("고지서");
+
+                        typeMessageView.setTitle("고지서 종류");
+                        userCodeMessageView.setTitle("분류");
+                        codeMessageView.setTitle("코드");
+                        confidenceMessageView.setTitle("정확도");
+
                         if (type.equals("") || type.equals("null")) {
-                            typeMessageView.setMessage("지원하지 않는 문서 양식입니다.");
-                            resultMessageView.setVisibility(View.GONE);
-                            metaMessageView.setVisibility(View.GONE);
-                        } else
-                        if (code.equals("") || code.equals("null")) {
-                            resultMessageView.setMessage(type);
-                            metaMessageView.setVisibility(View.GONE);
+                            imageClassMessageView.setMessage("지원하지 않는 문서 양식입니다.");
+                            codeMessageView.setVisibility(View.GONE);
+                            userCodeMessageView.setVisibility(View.GONE);
+                            typeMessageView.setVisibility(View.GONE);
+                            confidenceMessageView.setVisibility(View.GONE);
+                        } else if (code.equals("") || code.equals("null")) {
+                            typeMessageView.setMessage(type);
+                            userCodeMessageView.setVisibility(View.GONE);
+                            typeMessageView.setVisibility(View.GONE);
+                            confidenceMessageView.setVisibility(View.GONE);
                         } else {
-                            resultMessageView.setMessage(type);
-                            metaMessageView.setMessage(code);
+                            codeMessageView.setMessage(code);
+                            if (userCode.equals("") || userCode.equals("null")) {
+                                userCodeMessageView.setVisibility(View.GONE);
+                            }
+                            else{
+                                userCodeMessageView.setMessage(userCode);
+                            }
+                            typeMessageView.setMessage(type);
+                            confidenceMessageView.setMessage(confidenceLevel);
                         }
 
-                    } else{
-                        typeMessageView.setVisibility(View.INVISIBLE);
-                        resultMessageView.setVisibility(View.INVISIBLE);
-                        metaMessageView.setVisibility(View.INVISIBLE);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
